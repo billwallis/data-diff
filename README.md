@@ -23,5 +23,5 @@ Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and then e
 
 ```bash
 uv sync
-pre-commit install --install-hooks
+poe install
 ```

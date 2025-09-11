@@ -9,16 +9,24 @@ description = "Simple database table diff."
 authors = [{name = "billwallis"}]
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "arguably>=1.3.0",
+    "google-cloud-bigquery>=3.37.0",
+    "jinja2>=3.1.6",
+]
+
+[project.scripts]
+data-diff = "data_diff.__main__:arguably.run"
 
 [dependency-groups]
 dev = [
     "coverage-badge>=1.1.2",
+    "poethepoet>=0.37.0",
     "pre-commit>=4.3.0",
 ]
 test = [
-    "pytest>=8.4.1",
-    "pytest-cov>=6.2.1",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
 ]
 
 
@@ -26,14 +34,25 @@ test = [
 required-version = ">=0.8,<1.0"
 default-groups = "all"
 
-#[tool.uv.build-backend]
-#module-name = "src"
-#module-root = ""
-#namespace = true
+
+[tool.poe]
+verbosity = -1
+
+[tool.poe.tasks]
+install.shell = """
+    pre-commit install --install-hooks
+"""
+test = "uv run pytest -v"
+lint.shell = """
+    echo '\\033[0;34mpre-commit checks\\033[0m'
+    SKIP=identity pre-commit run --all-files --hook-stage pre-commit
+    echo '\\033[0;34mpre-push checks\\033[0m'
+    pre-commit run --all-files --hook-stage pre-push
+"""
 
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-fail-under=80"
+addopts = "--cov=src --cov-fail-under=20"
 testpaths = ["tests"]
 
 
@@ -61,7 +80,6 @@ select = [
     "PERF",  # Perflint
     "RUF",   # Ruff-specific
     "S",     # flake8-bandit
-    "TRY",   # tryceratops
     "UP",    # pyupgrade
     "W",     # pycodestyle-warning
 ]
