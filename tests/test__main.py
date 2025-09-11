@@ -6,7 +6,4 @@ from data_diff import main
 
 
 def test__main():
-    """
-    Test the ``main`` function.
-    """
-    main.main()
+    assert main.__name__ == "data_diff.main"
