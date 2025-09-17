@@ -6,6 +6,7 @@ from typing import Any
 import jinja2
 
 HERE = pathlib.Path(__file__).parent
+DEFAULT_DIALECT = "_default"
 DIALECT = "bigquery"
 COMPILED = ".compiled"  # relative to CWD
 
@@ -27,16 +28,22 @@ def save_to_file(*, filename: str) -> Callable:
     return decorator
 
 
-def read_query(name: str, params: dict) -> str:
-    query = (HERE / DIALECT / name).read_text("utf-8")
+def read_query(dialect: str, name: str, params: dict) -> str:
+    try:
+        query = (HERE / dialect / name).read_text("utf-8")
+    except FileNotFoundError:
+        query = (HERE / DEFAULT_DIALECT / name).read_text("utf-8")
 
     return jinja2.Template(query).render(params)
 
 
 @save_to_file(filename="get-columns.sql")
-def get_columns_query(database: str, schema: str, table: str) -> str:
+def get_columns_query(
+    dialect: str, database: str, schema: str, table: str
+) -> str:
     return read_query(
-        "get-columns.sql",
+        dialect=dialect,
+        name="get-columns.sql",
         params={
             "database": database,
             "schema": schema,
@@ -46,9 +53,10 @@ def get_columns_query(database: str, schema: str, table: str) -> str:
 
 
 @save_to_file(filename="get-row-count.sql")
-def get_row_count_query(identifier: str) -> str:
+def get_row_count_query(dialect: str, identifier: str) -> str:
     return read_query(
-        "get-row-count.sql",
+        dialect=dialect,
+        name="get-row-count.sql",
         params={
             "identifier": identifier,
         },
@@ -57,13 +65,15 @@ def get_row_count_query(identifier: str) -> str:
 
 @save_to_file(filename="create-temp-table.sql")
 def create_temp_table_query(
+    dialect: str,
     identifier_1: str,
     identifier_2: str,
     primary_keys: list[str],
     columns: list[str],
 ) -> str:
     return read_query(
-        "create-temp-table.sql",
+        dialect=dialect,
+        name="create-temp-table.sql",
         params={
             "identifier_1": identifier_1,
             "identifier_2": identifier_2,
@@ -74,9 +84,10 @@ def create_temp_table_query(
 
 
 @save_to_file(filename="compare-summary.sql")
-def compare_summary_query(columns: list[str]) -> str:
+def compare_summary_query(dialect: str, columns: list[str]) -> str:
     return read_query(
-        "compare-summary.sql",
+        dialect=dialect,
+        name="compare-summary.sql",
         params={
             "columns": columns,
         },
@@ -84,9 +95,12 @@ def compare_summary_query(columns: list[str]) -> str:
 
 
 @save_to_file(filename="compare-detail.sql")
-def compare_detail_query(primary_keys: list[str], columns: list[str]) -> str:
+def compare_detail_query(
+    dialect: str, primary_keys: list[str], columns: list[str]
+) -> str:
     return read_query(
-        "compare-detail.sql",
+        dialect=dialect,
+        name="compare-detail.sql",
         params={
             "primary_keys": primary_keys,
             "columns": columns,
