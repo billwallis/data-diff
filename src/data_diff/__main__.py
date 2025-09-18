@@ -12,10 +12,11 @@ def __root__() -> None:  # noqa: N807
 
 
 @arguably.command
-def compare(*, table: list[str], primary_key: list[str]) -> int:
+def compare(*, dialect: str, table: list[str], primary_key: list[str]) -> int:
     """
     Compare two database tables.
 
+    :param dialect: [--dialect] The SQL dialect to use.
     :param table: [--table] The names of the tables to compare.
     :param primary_key: [--primary-key] The primary key columns to use for comparison.
     """
@@ -23,7 +24,12 @@ def compare(*, table: list[str], primary_key: list[str]) -> int:
     if len(table) != 2:  # noqa: PLR2004
         raise ValueError("Exactly two table names must be provided.")
 
-    return data_diff.main.main(*table, primary_keys=primary_key)
+    return data_diff.main.main(
+        dialect=dialect,
+        table_1_id=table[0],
+        table_2_id=table[1],
+        primary_keys=primary_key,
+    )
 
 
 if __name__ == "__main__":
