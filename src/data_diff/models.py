@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from _typeshed.dbapi import DBAPICursor
+
 import dataclasses
-from typing import Any, Protocol
-
-
-class DatabaseConnector(Protocol):
-    def query(self, query: str) -> Any: ...
 
 
 @dataclasses.dataclass
 class Context:
-    connection: DatabaseConnector
+    cursor: DBAPICursor
     dialect: str
 
 
