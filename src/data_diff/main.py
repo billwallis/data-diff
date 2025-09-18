@@ -1,12 +1,8 @@
-from __future__ import annotations
-
-import dataclasses
 import pathlib
-from typing import Any, Protocol
 
 from google.cloud import bigquery
 
-from data_diff import queries
+from data_diff import models, queries
 
 SUCCESS = 0
 FAILURE = 1
@@ -14,45 +10,10 @@ HERE = pathlib.Path(__file__).parent
 QUERIES = HERE / "queries"
 
 
-class DatabaseConnector(Protocol):
-    def query(self, query: str) -> Any: ...
-
-
-@dataclasses.dataclass
-class Context:
-    connection: DatabaseConnector
-    dialect: str
-
-
-@dataclasses.dataclass(frozen=True, slots=True)
-class Column:
-    name: str
-    ordinal_position: int
-    data_type: str
-
-
-@dataclasses.dataclass(frozen=True, slots=True)
-class Table:
-    database: str
-    schema: str
-    name: str
-    identifier: str
-
-    @classmethod
-    def from_identifier(cls, identifier: str) -> Table:
-        parts = identifier.strip().split(".")
-        if len(parts) != 3:  # noqa: PLR2004
-            raise ValueError(f"Invalid table identifier: {identifier}")
-
-        return cls(
-            database=parts[0],
-            schema=parts[1],
-            name=parts[2],
-            identifier=identifier,
-        )
-
-
-def get_columns(ctx: Context, table: Table) -> dict[str, Column]:
+def get_columns(
+    ctx: models.Context,
+    table: models.Table,
+) -> dict[str, models.Column]:
     query = queries.get_columns_query(
         dialect=ctx.dialect,
         database=table.database,
@@ -61,7 +22,7 @@ def get_columns(ctx: Context, table: Table) -> dict[str, Column]:
     )
 
     return {
-        row.column_name: Column(
+        row.column_name: models.Column(
             name=row.column_name,
             ordinal_position=row.ordinal_position,
             data_type=row.data_type,
@@ -70,7 +31,7 @@ def get_columns(ctx: Context, table: Table) -> dict[str, Column]:
     }
 
 
-def get_row_count(ctx: Context, table: Table) -> int:
+def get_row_count(ctx: models.Context, table: models.Table) -> int:
     query = queries.get_row_count_query(
         dialect=ctx.dialect,
         identifier=table.identifier,
@@ -81,7 +42,7 @@ def get_row_count(ctx: Context, table: Table) -> int:
 
 
 def get_summary_mismatches(
-    ctx: Context,
+    ctx: models.Context,
     identifier_1: str,
     identifier_2: str,
     primary_keys: list[str],
@@ -107,7 +68,7 @@ def get_summary_mismatches(
 
 
 def get_detailed_mismatches(
-    ctx: Context,
+    ctx: models.Context,
     identifier_1: str,
     identifier_2: str,
     primary_keys: list[str],
@@ -141,12 +102,12 @@ def main(
 ) -> int:
     assert dialect == "bigquery", "Only BigQuery is supported currently."  # noqa: S101
 
-    context = Context(
+    context = models.Context(
         connection=bigquery.Client(),
         dialect="bigquery",
     )
-    table_1 = Table.from_identifier(table_1_id)
-    table_2 = Table.from_identifier(table_2_id)
+    table_1 = models.Table.from_identifier(table_1_id)
+    table_2 = models.Table.from_identifier(table_2_id)
 
     # Step 1: compare column schema
     table_1_columns = get_columns(context, table_1)
