@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import csv
 import pathlib
 from collections.abc import Generator
 from typing import TYPE_CHECKING, Any
@@ -89,7 +90,7 @@ def get_detailed_mismatches(
     identifier_2: str,
     primary_keys: list[str],
     columns: list[str],
-) -> list:
+) -> tuple[list, list]:
     query = ";\n\n".join(
         [
             queries.create_temp_table_query(
@@ -108,7 +109,10 @@ def get_detailed_mismatches(
     )
     ctx.cursor.execute(query)
 
-    return list(ctx.cursor.fetchall())
+    return (
+        list(_parse_columns(ctx.cursor.description).keys()),
+        list(ctx.cursor.fetchall()),
+    )
 
 
 @contextlib.contextmanager
@@ -155,7 +159,7 @@ def main(
             print(f"Table 1 row count: {table_1_row_count}")
             print(f"Table 2 row count: {table_2_row_count}")
             return FAILURE
-        print(f"Row counts: {table_1_row_count}")
+        print(f"Row count: {table_1_row_count:,}")
 
         # Step 3: compare high-level mismatches
         summary_mismatches = get_summary_mismatches(
@@ -175,7 +179,7 @@ def main(
         if all(col == 0 for col in summary_mismatches if col != "records"):
             return SUCCESS
 
-        detailed_mismatches = get_detailed_mismatches(
+        headers, detailed_mismatches = get_detailed_mismatches(
             context,
             table_1.identifier,
             table_2.identifier,
@@ -183,9 +187,10 @@ def main(
             list(table_1_columns),
         )
         details_file = pathlib.Path("mismatches.csv")
-        details_file.write_text(
-            "\n".join(detailed_mismatches),
-            encoding="utf-8",
-        )
+        with open(details_file, "w") as out:
+            csv_out = csv.writer(out)
+            csv_out.writerow(headers)
+            for row in detailed_mismatches:
+                csv_out.writerow(row)
 
         return FAILURE
