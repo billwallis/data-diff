@@ -11,7 +11,7 @@ import dataclasses
 @dataclasses.dataclass
 class Context:
     cursor: DBAPICursor
-    dialect: str
+    source: str
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
