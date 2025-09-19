@@ -28,7 +28,7 @@ def get_columns(
     table: models.Table,
 ) -> dict[str, models.Column]:
     query = queries.get_columns_query(
-        dialect=ctx.dialect,
+        dialect=ctx.source,
         database=table.database,
         schema=table.schema,
         table=table.name,
@@ -48,7 +48,7 @@ def get_columns(
 
 def get_row_count(ctx: models.Context, table: models.Table) -> int:
     query = queries.get_row_count_query(
-        dialect=ctx.dialect,
+        dialect=ctx.source,
         identifier=table.identifier,
     )
     ctx.cursor.execute(query)
@@ -67,14 +67,14 @@ def get_summary_mismatches(
     query = ";\n\n".join(
         [
             queries.create_temp_table_query(
-                dialect=ctx.dialect,
+                dialect=ctx.source,
                 identifier_1=identifier_1,
                 identifier_2=identifier_2,
                 primary_keys=primary_keys,
                 columns=columns,
             ),
             queries.compare_summary_query(
-                dialect=ctx.dialect,
+                dialect=ctx.source,
                 columns=columns,
             ),
         ]
@@ -94,14 +94,14 @@ def get_detailed_mismatches(
     query = ";\n\n".join(
         [
             queries.create_temp_table_query(
-                dialect=ctx.dialect,
+                dialect=ctx.source,
                 identifier_1=identifier_1,
                 identifier_2=identifier_2,
                 primary_keys=primary_keys,
                 columns=columns,
             ),
             queries.compare_detail_query(
-                dialect=ctx.dialect,
+                dialect=ctx.source,
                 primary_keys=primary_keys,
                 columns=columns,
             ),
@@ -127,17 +127,17 @@ def get_cursor() -> Generator[DBAPICursor]:
 
 
 def main(
-    dialect: str,
+    source: str,
     table_1_id: str,
     table_2_id: str,
     primary_keys: list[str],
 ) -> int:
-    assert dialect == "bigquery", "Only BigQuery is supported currently."  # noqa: S101
+    assert source == "bigquery", "Only BigQuery is supported currently."  # noqa: S101
 
     with get_cursor() as conn:
         context = models.Context(
             cursor=conn,
-            dialect="bigquery",
+            source="bigquery",
         )
         table_1 = models.Table.from_identifier(table_1_id)
         table_2 = models.Table.from_identifier(table_2_id)
