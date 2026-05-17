@@ -167,7 +167,7 @@ dev = [
     { name = "pre-commit", specifier = ">=4.5.1" },
 ]
 test = [
-    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest", specifier = ">=9.0.3" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
 ]
 
